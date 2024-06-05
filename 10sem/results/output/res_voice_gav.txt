@@ -1,0 +1,5 @@
+voice_gav
+Max frequency: 20132.8125
+Min freq: 0.0
+Maintone: 640
+Strongest formants: [3937.5, 3187.5, 3750.0]

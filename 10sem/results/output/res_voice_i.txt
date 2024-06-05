@@ -1,0 +1,5 @@
+voice_i
+Max frequency: 20062.5
+Min freq: 0.0
+Maintone: 505
+Strongest formants: [1687.5, 3375.0, 1875.0]

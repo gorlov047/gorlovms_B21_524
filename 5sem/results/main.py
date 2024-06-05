@@ -4,20 +4,20 @@ import numpy as np
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from matplotlib import pyplot as plt
 
-UNICODE_PERSIAN_LETTERS = [
-    "0531", "0532", "0533", "0534", "0535", "0536", "0537", "0538", "0539", "053A",
-    "053B", "053C", "053D", "053E", "053F", "0540", "0541", "0542", "0543", "0544",
-    "0545", "0546", "0547", "0548", "0549", "054A", "054B", "054C", "054D", "054E",
-    "054F", "0550", "0551", "0552", "0553", "0554", "0555", "0556"
+UNICODE_LETTERS = [
+    "0561", "0562", "0563", "0564", "0565", "0566", "0567", "0568", "0569", "056A",
+    "056B", "056C", "056D", "056E", "056F", "0570", "0571", "0572", "0573", "0574",
+    "0575", "0576", "0577", "0577", "0579", "057A", "057B", "057C", "057D", "057E",
+    "057F", "0580", "0581", "0582", "0583", "0584", "0585", "0586", "0587"
 ]
 
 # Преобразование Unicode в символы
-LETTERS_PERSIAN = [chr(int(code, 16)) for code in UNICODE_PERSIAN_LETTERS]
+LETTERS = [chr(int(code, 16)) for code in UNICODE_LETTERS]
 
 # Параметры шрифта и пороговое значение
 FONT_SIZE = 52
 BINARIZATION_THRESHOLD = 75
-FONT_FILE_PATH = "Unicode.ttf"
+FONT_FILE_PATH = "5sem/results/unicode.ttf"
 PIXEL_WHITE = 255
 
 def binarize_image(img, threshold=BINARIZATION_THRESHOLD):
@@ -28,8 +28,8 @@ def binarize_image(img, threshold=BINARIZATION_THRESHOLD):
 
 def create_letter_images(letters):
     font = ImageFont.truetype(FONT_FILE_PATH, FONT_SIZE)
-    os.makedirs("output/letters", exist_ok=True)
-    os.makedirs("output/inverted_letters", exist_ok=True)
+    os.makedirs("5sem/results/output/letters", exist_ok=True)
+    os.makedirs("5sem/results/output/inverted_letters", exist_ok=True)
 
     for idx, letter in enumerate(letters):
         _, _, _, bottom = font.getbbox(letter)
@@ -38,8 +38,8 @@ def create_letter_images(letters):
         draw = ImageDraw.Draw(letter_img)
         draw.text((0, 0), letter, "black", font=font)
         binary_img = Image.fromarray(binarize_image(np.array(letter_img)), 'L')
-        binary_img.save(f"output/letters/{idx + 1}.png")
-        ImageOps.invert(binary_img).save(f"output/inverted_letters/{idx + 1}.png")
+        binary_img.save(f"5sem/results/output/letters/{idx + 1}.png")
+        ImageOps.invert(binary_img).save(f"5sem/results/output/inverted_letters/{idx + 1}.png")
 
 def extract_image_features(image):
     binary = np.where(image != PIXEL_WHITE, 1, 0)
@@ -80,7 +80,7 @@ def extract_image_features(image):
 
 def save_features_to_csv(letters):
     os.makedirs('output', exist_ok=True)
-    with open('output/features.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('5sem/results/output/features.csv', 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['total_weight', 'weights', 'normalized_weights', 'center_of_mass', 'norm_center_of_mass', 'inertia', 'norm_inertia']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -91,26 +91,26 @@ def save_features_to_csv(letters):
             writer.writerow(features)
 
 def create_image_profiles(letters):
-    os.makedirs("output/profiles/horizontal", exist_ok=True)
-    os.makedirs("output/profiles/vertical", exist_ok=True)
+    os.makedirs("5sem/results/output/profiles/horizontal", exist_ok=True)
+    os.makedirs("5sem/results/output/profiles/vertical", exist_ok=True)
 
     for idx in range(len(letters)):
-        img = np.array(Image.open(f'output/letters/{idx + 1}.png').convert('L'))
+        img = np.array(Image.open(f'5sem/results/output/letters/{idx + 1}.png').convert('L'))
         binary = np.where(img != PIXEL_WHITE, 1, 0)
 
         plt.bar(np.arange(1, binary.shape[1] + 1), np.sum(binary, axis=0), width=0.9)
         plt.ylim(0, FONT_SIZE)
         plt.xlim(0, 55)
-        plt.savefig(f'output/profiles/horizontal/{idx + 1}.png')
+        plt.savefig(f'5sem/results/output/profiles/horizontal/{idx + 1}.png')
         plt.clf()
 
         plt.barh(np.arange(1, binary.shape[0] + 1), np.sum(binary, axis=1), height=0.9)
         plt.ylim(FONT_SIZE, 0)
         plt.xlim(0, 55)
-        plt.savefig(f'output/profiles/vertical/{idx + 1}.png')
+        plt.savefig(f'5sem/results/output/profiles/vertical/{idx + 1}.png')
         plt.clf()
 
 if __name__ == "__main__":
-    create_letter_images(LETTERS_PERSIAN)
-    save_features_to_csv(LETTERS_PERSIAN)
-    create_image_profiles(LETTERS_PERSIAN)
+    create_letter_images(LETTERS)
+    save_features_to_csv(LETTERS)
+    create_image_profiles(LETTERS)

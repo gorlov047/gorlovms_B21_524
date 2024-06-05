@@ -1,98 +1,92 @@
+import numpy as np
+import librosa
+from glob import glob
+import matplotlib.pyplot as plt
+from scipy import signal
+from scipy.ndimage import maximum_filter
+from scipy.io import wavfile
 import os
 
-from scipy.io import wavfile
-from scipy import signal
-import matplotlib.pyplot as plt
-import numpy as np
 
-from utils import (
-    integral_image, 
-    sum_in_frame,
-    culculate_mean,
-    change_sample_rate,
-    find_formants,
-    find_all_formants,
-    power,
-    spectrogram_plot
-)
+def make_spectrogram(samples, sample_rate, output_path: str):
+    freq, time, spectrogram = signal.spectrogram(samples, 
+                                                 sample_rate, 
+                                                 scaling='spectrum', 
+                                                 window=('hann'))
 
+    log_spectrogram = np.log10(spectrogram)
+    
+    plt.pcolormesh(time, freq, log_spectrogram, shading='auto')
+    plt.ylabel('Частота [Гц]')
+    plt.xlabel('Время  [c]')
 
-working_dir = os.path.join(os.getcwd(), '10sem/results')
-input_path = f'{working_dir}/input'
-output_path = f'{working_dir}/output'
+    plt.savefig(output_path)
+
+    return freq, time, spectrogram
+
+def get_frequences(input_path: str):
+    samples, sample_rate = librosa.load(input_path, sr=None)
+    db = librosa.amplitude_to_db(np.abs(librosa.stft(samples)), ref=np.max)
+
+    freq = librosa.fft_frequencies(sr=sample_rate)
+    mean_spec = np.mean(db, axis=1)
+
+    min = np.argmax(mean_spec > -80)
+    max = len(mean_spec) - np.argmax(mean_spec[::-1] > -80) - 1
+
+    min_freq = freq[min]
+    max_freq = freq[max]
+
+    return max_freq, min_freq
+
+def get_tembr_maintone(input_path: str):
+    samples, sample_rate = librosa.load(input_path)
+    chroma_stft = librosa.feature.chroma_stft(y=samples, sr=sample_rate)
+    obertone = librosa.piptrack(y=samples, sr=sample_rate, S=chroma_stft)[0]
+    max_obertone = np.argmax(obertone)
+
+    return max_obertone
+
+def get_formants(freq, time, spec):
+    delta_t = int(0.1 * len(time))
+    delta_freq = int(50 / (freq[1] - freq[0]))
+    filtered = maximum_filter(spec, size=(delta_freq, delta_t))
+
+    peaks_mask = (spec == filtered)
+    peak_values = spec[peaks_mask]
+    peak_frequencies = freq[peaks_mask.any(axis=1)]
+
+    top_indices = np.argsort(peak_values)[-3:]
+    top_frequencies = peak_frequencies[top_indices]
+
+    return list(top_frequencies)
+
+def process_sounds(input_path: str):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    output_path = os.path.join(current_dir, 'output')
+    spec_opath = os.path.join(output_path, os.path.splitext("spec_" + os.path.basename(input_path))[0] + ".png")
+    title =os.path.basename(input_path).split(".")[0]
+    file_opath = f"10sem/results/output/res_{title}.txt"
+
+    with open(file_opath, 'w') as file:
+        sample_rate, samples = wavfile.read(input_path)
+        freq, time, spec = make_spectrogram(samples, sample_rate, spec_opath)
+        max_freq, min_freq = get_frequences(input_path)
+        formants = get_formants(freq, time, spec)
+        maintone = get_tembr_maintone(input_path)
+        file.write(f"{title}\n")
+        file.write(f"Max frequency: {max_freq}\n")
+        file.write(f"Min freq: {min_freq}\n")
+        file.write(f"Maintone: {maintone}\n")
+        file.write(f"Strongest formants: {formants}\n")
 
 
 def main():
-   change_sample_rate("voice_a.wav")
-   sample_rate_a, samples_a = wavfile.read(f"{input_path}/voice_a.wav")
-
-   dpi = 500
-   spectogram_a, frequencies_a = spectrogram_plot(samples_a, sample_rate_a, 11000)
-   plt.axhline(y = 344,  color = 'r', linestyle = '-', lw= 0.5, label = "Форманты")
-   plt.axhline(y = 602,  color = 'r', linestyle = '-', lw= 0.5)
-   plt.axhline(y = 861,  color = 'r', linestyle = '-', lw= 0.5)
-   plt.axhline(y = 1119,  color = 'r', linestyle = '-', lw= 0.5)
-   plt.legend()
-   plt.savefig(f'{output_path}/spectrogram_a.png', dpi = dpi)
-   plt.clf()
-
-   change_sample_rate("voice_i.wav")
-   sample_rate_i , samples_i = wavfile.read(f"{input_path}/voice_i.wav")
-   spectogram_i, frequencies_i = spectrogram_plot(samples_i, sample_rate_i, 11000)
-   plt.axhline(y = 344,  color = 'r', linestyle = '-', lw= 0.5, label = "Форманты")
-   plt.axhline(y = 602,  color = 'r', linestyle = '-', lw= 0.5)
-   plt.axhline(y = 86,  color = 'r', linestyle = '-', lw= 0.5)
-   plt.axhline(y = 2928,  color = 'r', linestyle = '-', lw= 0.5)
-   plt.legend()
-   plt.savefig(f'{output_path}/spectrogram_i.png', dpi = dpi)
-   plt.clf()
-
-   change_sample_rate("voice_gav.wav")
-   sample_rate_gav , samples_gav = wavfile.read(f"{input_path}/voice_gav.wav")
-   spectogram_gav, frequencies_gav = spectrogram_plot(samples_gav, sample_rate_gav, 11000)
-   plt.savefig(f'{output_path}/spectrogram_gav.png', dpi = dpi)
-   plt.clf()
-
-   spec_a = integral_image(spectogram_a)
-   
-   formants_a = list(find_all_formants(frequencies_a, spec_a, 3))
-   formants_a.sort()
-
-   print("Минимальная частота для звука А: " + str(formants_a[0]))
-   print("Максимальная частота для звука А: " + str(formants_a[-1]))
-
-   print("Тембрально окрашенный тон для звука А: " + str(formants_a[0]))
-
-   power_a = power(frequencies_a, spec_a, 3, formants_a)
-   print(sorted(power_a.items(), key = lambda item: item[1], reverse=True))
-   print("Четыре самые сильные форманты: " + str(sorted(power_a, key=lambda i: power_a[i])[-4:]))
-
-   spec_i = integral_image(spectogram_i)
-   
-   formants_i = list(find_all_formants(frequencies_i, spec_i, 3))
-   formants_i.sort()
-
-   print("\n\nМинимальная частота для звука И: " + str(formants_i[0]))
-   print("Максимальная частота для звука И: " + str(formants_i[-1]))
-
-   print("Тембрально окрашенный тон для звука И: " + str(formants_i[0]))
-
-   power_i = power(frequencies_i, spec_i, 3, formants_i)
-   print(sorted(power_i.items(), key = lambda item: item[1], reverse=True))
-   print("Четыре самые сильные форманты: " + str(sorted(power_i, key=lambda i: power_i[i])[-4:]))
-
-   spec_gav = integral_image(spectogram_gav)
-   
-   formants_gav = list(find_all_formants(frequencies_gav, spec_gav, 5))
-   formants_gav.sort()
-
-   print("\n\nМинимальная частота для звука ГАВ: " + str(formants_gav[0]))
-   print("Максимальная частота для звука ГАВ: " + str(formants_gav[-2]))
+    process_sounds("10sem/results/input/voice_a.wav")
+    process_sounds("10sem/results/input/voice_i.wav")
+    process_sounds("10sem/results/input/voice_gav.wav")
 
 
-if __name__ == "__main__":
-    """
-    У звука "И" значительная часть переносящих основную энергию формант сосредоточена в диапазоне 86 --- 1120 Гц. 
-    У звука "А" перенос энергии происходит как на низких частотах (86 --- 602) Гц, так и на высоких (см форманту FIV 2928 Гц)
-    """
+
+if __name__ == '__main__':
     main()

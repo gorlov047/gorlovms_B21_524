@@ -2,15 +2,10 @@ import os
 import csv
 
 import numpy as np
-from PIL import Image, ImageDraw
-from PIL.ImageOps import invert
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-
+from PIL import Image
 
 from segmentation import calc_profiles, segment_letters
 from features_computer import FeaturesComputer
-from utils import NPoint
 
 
 working_dir = os.path.join(os.getcwd(), '7sem/results/')
@@ -81,18 +76,18 @@ def calc_distance_between_letter_and_alphabet(img_letter, alphabet, letter_in_se
 
 
 def save_results_to_csv(results_by_letter):
-    with open(f'{output_path}/result.csv', mode='w', newline='') as file:
+    with open(f'{output_path}/result.csv', mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         for row in results_by_letter:
             writer.writerow(row)
 
 
 def main():
-    img_name = 'phrase10.bmp'
+    img_name = 'phrase.bmp'
     input_img_path = f'{input_path}/{img_name}'
     output_img_path = f'{output_path}/{img_name}'
-    alphabet = 'АӘБВГҒДЕЁЖЗИЙКҚЛМНҢОӨПРСТУҰҮФХҺЦЧШЩЪЫІЬЭЮЯ'
-    sentence = 'САҒАН ДЕГЕН СЕЗІМІМ АРЬІЛ АРМАНДАРЬІМДАН ДА АСЬІП ТҮСЕДІ'.replace(' ', '')
+    alphabet = 'աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆ'
+    sentence = 'սերը բոլոր տարիքի հնազանդ է'.replace(' ', '')
     
     input_image = open_img_and_prepare(input_img_path)
 

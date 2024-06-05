@@ -1,22 +1,9 @@
-import os
-
 from PIL import Image
 import numpy as np
 
 
-working_dir = os.path.join(os.getcwd(), '2sem/results/2.8')
-
 def semitone(old_img_arr):
-    height = old_img_arr.shape[0]
-    width = old_img_arr.shape[1]
-
-    new_img_arr = np.zeros(shape=(height, width))
-
-    for x in range(width):
-        for y in range(height):
-            pixel = old_img_arr[y, x]
-            new_img_arr[y, x] = 0.3 * pixel[0] + 0.59 * pixel[1] + 0.11 * pixel[2]
-
+    new_img_arr = 0.3 * old_img_arr[:,:,0] + 0.59 * old_img_arr[:,:,1] + 0.11 * old_img_arr[:,:,2]
     return new_img_arr.astype(np.uint8)
 
 
@@ -40,12 +27,11 @@ def compute_local_threshold(image, window_size=15, C=10):
 """
 Алгоритм WAN (Weighted Adaptive Neighborhood) работает следующим образом:
 
-1) Для каждого пикселя изображения вычисляется среднее значение интенсивности в его окрестности. 
-Эта окрестность может быть задана, например, квадратным или круглым окном определенного размера.
+1) Для каждого пикселя изображения вычисляется среднее значение интенсивности в его окрестности,
+она задана квадратным или круглым окном какого-то размера
 
 2) Вычисляется весовой коэффициент для каждого пикселя в окрестности, 
-который может зависеть от различных факторов, таких как расстояние до центрального пикселя или 
-разность интенсивностей.
+зависит от  расстояния до центрального пикселя или разности интенсивностей
 
 3) На основе среднего значения интенсивности и весовых коэффициентов вычисляется адаптивный порог для 
 каждого пикселя. Пиксели, чья интенсивность выше порога, становятся белыми, а те, что ниже - черными.
@@ -67,21 +53,17 @@ def wan_binarization(image, window_size=15, C=10):
 
     return binarized_image
 
-def handle_img(img_name):
-    fullcolor_image_path = working_dir + '/input/' + img_name
-    fullcolor_image = np.array(Image.open(fullcolor_image_path))
-
-    halftone_image = wan_binarization(fullcolor_image)
-
-    halftone_image_path = working_dir + '/output/' + img_name
-    Image.fromarray(halftone_image.astype(np.uint8)).save(halftone_image_path)
-
 
 def main():
-    images = ("pag2.png")
+    images = ["img1.bmp", "img2.bmp", "img3.bmp"]
 
-    for img in images:
-        handle_img(img)   
+    for image in images:
+        img_src = Image.open(f"2sem/results/2.8/input/{image}").convert('RGB')
+        gray_img_arr = semitone(np.array(img_src))
+        binarized_image = wan_binarization(gray_img_arr)
+        img = Image.fromarray(binarized_image)
+        img.save(f"2sem/results/2.8/output/{image}")
+
 
 if __name__ == "__main__":
     main()

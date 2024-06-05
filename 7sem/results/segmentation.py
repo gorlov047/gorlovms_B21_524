@@ -1,10 +1,4 @@
-import os
-
 import numpy as np
-from PIL import Image, ImageDraw
-from PIL.ImageOps import invert
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 
 def segment_letters(img, profile):

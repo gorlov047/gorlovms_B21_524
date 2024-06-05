@@ -1,0 +1,5 @@
+voice_a
+Max frequency: 20015.625
+Min freq: 0.0
+Maintone: 546
+Strongest formants: [3375.0, 3562.5, 9750.0]

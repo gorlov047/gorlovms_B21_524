@@ -1,11 +1,6 @@
 import os
-import csv
-
 from scipy.io import wavfile
-from scipy import signal
 import matplotlib.pyplot as plt
-import numpy as np
-
 from utils import spectrogram_plot, denoise, to_pcm
 
 
